@@ -7,9 +7,9 @@ In computer science, a B-tree is a self-balancing tree data structure that maint
 B-tree of order m is a tree which satisfies the following properties:
 
 **1.** Every node has at most m children.
-**2.** Every non-leaf node (except root) has at least ?m/2? child nodes.
+**2.** Every non-leaf node (except root) has at least ceil(m/2) child nodes.
 **3.** The root has at least two children if it is not a leaf node.
-**4.** A non-leaf node with k children contains k ? 1 keys.
+**4.** A non-leaf node with k children contains k - 1 keys.
 **5.** All leaves appear in the same level and carry no information.
 
 ## Source Code
