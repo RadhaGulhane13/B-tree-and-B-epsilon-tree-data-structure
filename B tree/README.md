@@ -1,7 +1,7 @@
 # B Tree
 
 ## Introduction
-In computer science, a B-tree is a self-balancing tree data structure that maintains sorted data and allows searches, sequential access, insertions, and deletions in logarithmic time. 
+B-tree is a self-balancing tree data structure that maintains sorted data and allows searches, sequential access, insertions, and deletions in logarithmic time. 
 
 ## Definition
 B-tree of order m is a tree which satisfies the following properties:
