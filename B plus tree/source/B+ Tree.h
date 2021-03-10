@@ -10,8 +10,12 @@ using namespace std;
 #define INTERNAL_NODE_ORDER  (BLOCK_SIZE - NODE_POINTER_SIZE + KEY_SIZE - sizeof(int) -sizeof(bool)) /(KEY_SIZE +  NODE_POINTER_SIZE) 
 #define DATA_NODE_ORDER (BLOCK_SIZE - NODE_POINTER_SIZE + KEY_SIZE + VALUE_SIZE- sizeof(int) -sizeof(bool))/(KEY_SIZE + VALUE_SIZE)
 #define ORDER min(INTERNAL_NODE_ORDER ,DATA_NODE_ORDER)
+#define LOG "log.txt"
+#define ERRORLOG "errorlog.txt"
+const int arr_n = 1000;
 
-const int MAX_SIZE = 7;
+
+const int MAX_SIZE = 4;
 
 struct node {
 	/** union ValuesOrNodes
@@ -30,8 +34,8 @@ struct node {
 
 void display(node* root);
 node* insert_node(node* root, int key,int value);
-int delete_key(node* root,int key);
+node* delete_node(node* root,int key);
 void search(node* root,int key);
 void search_all(node* root);
 void get_interval_values(node*root,int start_key,int end_key);
-void invarient_b_plus_tree(node* root);
+bool check_invarient(node* root);

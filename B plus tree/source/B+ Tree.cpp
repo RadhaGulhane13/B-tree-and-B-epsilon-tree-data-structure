@@ -1,4 +1,7 @@
 #include "B+ Tree.h"
+#include<fstream>
+ofstream logFile(LOG);
+ofstream errorlogFile(ERRORLOG);
 
 /**
 * display() is a function for displaying created B-plus tree in breadth first traversal
@@ -10,7 +13,8 @@
 void display(node* root)
 {
 	if (root == NULL) {
-		cout<<"Tree is Empty"<<endl;
+		cout<<"Display : Tree is Empty"<<endl;
+		logFile<<"Display : Tree is Empty"<<endl;
 		return;
 	}
 	queue<node*> g;
@@ -159,6 +163,12 @@ int split_data_node(node* root, int key, int value)
 
 	for (i = 0; i < half_maxsize; i++) {
 		//if(key<root->key[i]){//key already present; return -1;}else
+		if (key == root->key[i]) {
+			//cout<<"Given key is already present";
+			//logFile<<"Given key, "<<key<<" is already present"<<endl;
+			errorlogFile<<"Given key, "<<key<<" is already present"<<endl;
+			return -1;
+		}
 		if (key < root->key[i]) {
 			int temp_key,temp_value;
 			for(; i < half_maxsize; i++)
@@ -185,6 +195,15 @@ int split_data_node(node* root, int key, int value)
 	} else {
 		count_n = 0;
 		for (; i < root->n; i++) {
+			if (key == root->key[i]) {
+				//cout<<"Given key is already present";
+				//logFile<<"Given key, "<<key<<" is already present"<<endl;
+				errorlogFile<<"Given key, "<<key<<" is already present"<<endl;
+				//delete n2 and make it null
+				delete n2;
+				n2 = NULL;
+				return -1;
+			}
 			if (key < root->key[i]) {
 				n2->key[count_n] = key;
 				n2->d.value[count_n] = value;
@@ -220,6 +239,8 @@ int split_data_node(node* root, int key, int value)
 	n2->n = count_n;
 	n2->nextsib = root->nextsib;
 	root->nextsib = n2;
+
+	logFile<<"Given key, "<<key<<" is inserted successfully."<<endl;
 	return n2->key[0];
 }
 
@@ -282,6 +303,13 @@ int insert(node* root, int key, int value)
 			/*add key to appropriate location */
 			int j;
 			for (j = 0; j < root->n; j++) {
+				if(key == root->key[j])
+				{
+					//cout<<"Given key is already present"<<endl;
+					//logFile<<"Given key, "<<key<<" is already present"<<endl;
+					errorlogFile<<"Given key, "<<key<<" is already present"<<endl;
+					return -1;
+				}
 				if(key < root->key[j]) {
 					break;
 				}
@@ -293,6 +321,7 @@ int insert(node* root, int key, int value)
 			root->key[j] = key;
 			root->d.value[j] = value;
 			root->n++;
+			logFile<<"Given key, "<<key<<" is inserted successfully."<<endl;
 		}
 	}
 	return -1;
@@ -780,12 +809,14 @@ int delete_key(node* root, int key) //delete key
 				}
 				root->n--;
 
-				cout<<"Given key, "<<key<<" is successfullly deleted..."<<endl;
-
+				//cout<<"Given key, "<<key<<" is successfullly deleted..."<<endl;
+				logFile<<"Given key, "<<key<<" is successfully deleted"<<endl;
 				return  min_key;
 			}
 		}
-		cout<<"Given key, "<<key<<" is not present"<<endl;
+		//cout<<"Given key, "<<key<<" is not present"<<endl;
+		//logFile<<"Given key, "<<key<<" is not present"<<endl;
+		errorlogFile<<"Given key, "<<key<<" is not present"<<endl;
 		return  min_key;
 
 	} else {
@@ -814,6 +845,7 @@ int delete_key(node* root, int key) //delete key
 			} else {
 				//i.e. if i==0 and key deletion from first child//find deleteted key was min if yes =>update min_key  NOte: updating min_key needs to be done after bakancing
 				if (key < root->d.pivotmap[0]->key[0]) {
+					//condition becomes key <= root->d.pivotmap[0]->key[0] if dublicates allowed
 					min_key = root->d.pivotmap[0]->key[0];
 				}
 			}
@@ -837,6 +869,34 @@ int delete_key(node* root, int key) //delete key
 }
 
 /**
+* delete_node() will call delete_key() function and delete root if required 
+*
+* @param root is pointer  to node pointing to root of B plus tree
+* @param key is a key which needs to get deleted
+*/
+node* delete_node(node* root, int key)
+{
+	if(root != NULL) {
+		delete_key(root,key);
+
+		if (root->n == 0) {
+			if (root->datanode == 0) {
+				node* temp = root;
+				root = root->d.pivotmap[0];
+				delete temp;
+				temp = NULL;
+			} else {
+				root = NULL;
+			}
+		}
+		
+	} else {
+		cout<<"Tree is empty"<<endl<<endl;
+	}
+	return root;
+}
+
+/**
 * search() will allow to search for a key and get value of that key if present
 * Algorithm : if node is data node, traverse the node to get value of key if key is present 
 *             else find appropriate pivot and call search() function recursively for that pivot i.e. search(P[i]) where i, such that key< key[i]
@@ -849,11 +909,14 @@ void search(node* root, int key) //search for a key and return value
 	if (root->datanode) {
 		for (int i = 0; i < root->n; i++) {
 			if (root->key[i] == key) {
-				cout<<"Value for given key,"<<key<<" is : "<<root->d.value[i]<<endl;
+				//cout<<"Value for given key,"<<key<<" is : "<<root->d.value[i]<<endl;
+				logFile<<"Value for given key,"<<key<<" is : "<<root->d.value[i]<<endl;
 				return ;
 			}
 		}
-		cout<<"Given key, "<<key<<" is not present"<<endl;
+		//cout<<"Given key, "<<key<<" is not present"<<endl;
+		//logFile<<"Given key, "<<key<<" is not present"<<endl;
+		errorlogFile<<"Given key, "<<key<<" is not present"<<endl;
 		return ;
 	} else {
 		/*find appropriate pivot pointer*/
@@ -877,6 +940,12 @@ void search(node* root, int key) //search for a key and return value
 */
 void search_all(node* root) 
 {
+	if (root == NULL) {
+		cout<<"search_all: Tree is Empty"<<endl;
+		//logFile<<"search_all: Tree is Empty"<<endl;
+		return;
+	}
+
 	/*traverse to leftist leftest data/leaf node */
 	node *p = root;
 	while (!p->datanode) {
@@ -940,123 +1009,148 @@ void get_interval_values(node* root, int start_key, int end_key)
 }
 
 /**
-* invarient_b_plus_tree() will traverse the whole tree and check invarients
-* Invarient checking:
-* 1. the number of keys should be less than MAX_SIZE(i.e. order of tree)
-* 2. the number of keys should be greater than minimum key required
-* 3. Tree should be balance 
+* check_key_order() will check whether keys present in root are in increasing order or not
+*
+* @param root is node pointer where keys order needs to be checked
 */
-void invarient_b_plus_tree(node* root)
+bool check_key_order(node* root)
 {
-	int minchild = MAX_SIZE%2? MAX_SIZE/2+1 : MAX_SIZE/2;
-
-	if (root == NULL) {
-		cout<<"Tree is Empty"<<endl;
-		return;
-	}
-	int count = 0; //count:may exceed than int 
-	queue<node*> g;
-	if(root->n > MAX_SIZE-1)
-	{
-		cout<<"Overflow at root: number of keys exceeds than value of maximum key required"<<endl;
-	}
-	if(root->n < 1)
-	{
-		cout<<"Underflow at root: number of keys less than value minimum key required"<<endl;
-	}
-	/*for (int i = 0; i < root->n; i++) {
-	cout<<root->key[i]<<"  ";
-	}*/
-	if (!root->datanode) {
-		bool temp_datanode = root->d.pivotmap[0]->datanode;
-		for (int i = 0; i<root->n+1; i++) { 
-
-			g.push(root->d.pivotmap[i]);
-			if(temp_datanode !=root->d.pivotmap[i]->datanode)
-			{
-				cout<<"Inconsistency / not balanced : one child is pointing to data node while other is to internal node"<<endl;
-			}
-
-			count++;
+	for (int i = root->n-1; i > 0; i--) {
+		if(root->key[i-1] > root->key[i]) {
+			return 0;
 		}
 	}
-	else {
-		/*cout<<" values : ";
-		for(int i = 0; i < root->n; i++)
-		{
-		cout<<root->d.value[i]<<"  ";
-		}*/
-	}
-	//cout<<endl;
-
-	while (count) {
-		int temp_count=0; //may exceed than int 
-		while(count)
-		{
-			node *n = g.front();
-			g.pop();
-			/*cout<<"datanode : "<<n->datanode<<"  total keys :"<<n->n<<" keys: ";
-			for (int i = 0; i < n->n; i++) {
-			cout<<n->key[i]<<"  ";
-			}*/
-			if(n->n > MAX_SIZE-1)
-			{
-				cout<<"Overflow : number of keys exceeds than value of maximum key required"<<endl;
-			}
-			if(n->n < minchild-1)
-			{
-				cout<<"Underflow : number of keys less than value minimum key required"<<endl;
-			}
-			if (!n->datanode) {
-				bool temp_datanode = n->d.pivotmap[0]->datanode;
-				for (int i = 0; i<n->n+1; i++) { 
-					g.push(n->d.pivotmap[i]);
-					if(temp_datanode != n->d.pivotmap[i]->datanode)
-					{
-						cout<<"Inconsistency / not balanced : one child is pointing to data node while other is to internal node"<<endl;
-					}
-					temp_count++;
-				}
-			} /*else {
-			  cout<<" values : ";
-			  for(int i = 0; i < n->n; i++)
-			  {
-			  cout<<n->d.value[i]<<"  ";
-			  }
-			  }*/
-			count--;
-			//cout<<endl;
-		}
-		count = temp_count;
-		//cout<<endl;
-	}
-
-	/*while (!g.empty()) {
-	node *n = g.front();
-	g.pop();
-	//check if have min key
-	if(n->n > MAX_SIZE-1)
-	{
-	cout<<"Overflow : number of keys exceeds than value of maximum key required"<<endl;
-	}
-	if(n->n < minchild-1)
-	{
-	cout<<"Underflow : number of keys less than value minimum key required"<<endl;
-	}
-
-	if (!n->datanode) {
-	for (int i = 0; i<n->n+1; i++) { 
-	if(n->d.pivotmap[i])
-	g.push(n->d.pivotmap[i]);
-	else
-	cout<<"child node is not exist for internal node "<<endl;
-	}
-
-
-	} 
-
-	}*/
-
-	cout<<"Finished in-variant checking"<<endl;
+	return 1;
 }
 
+/**
+* invarient_b_plus_tree_() is function for invarient checking in depth first order
+* Invarient checking:
+* 1. keys should be in ascending order
+* 2. the number of keys should be less than MAX_SIZE(i.e. order of tree)
+* 3. the number of keys should be greater than minimum key required
+* 4. Tree should be balance 
+*
+* return height of tree(to determine if tree is balance) if no violation else return -1
+* @param root is node pointer for which invarient checking needs to be done
+*/
+int invarient_b_plus_tree_(node* root)
+{
+	int minchild = MAX_SIZE%2? MAX_SIZE/2+1 : MAX_SIZE/2;
+	if (root->datanode) {
+		//check keys in order
+		if (!check_key_order(root)) {
+			return -1;
+		}
+		//check  min,max n
+		if (root->n > MAX_SIZE-1) {
+			cout<<"Overflow at datanode: number of keys exceeds than value of maximum key required"<<endl;
+			//logFile<<"Overflow at datanode: number of keys exceeds than value of maximum key required"<<endl;
+			errorlogFile<<"Overflow at datanode: number of keys exceeds than value of maximum key required"<<endl;
+			return -1;
+		}
+		if (root->n < minchild-1) {
+			cout<<"Underflow at datanode: number of keys less than value minimum key required"<<endl;
+			//logFile<<"Underflow at datanode: number of keys less than value minimum key required"<<endl;
+			errorlogFile<<"Underflow at datanode: number of keys less than value minimum key required"<<endl;
+			return -1;
+		}
+		return 0;
+	}
+	else {
+		//check keys in order
+		//check  min,max n
+		if (root->n > MAX_SIZE-1) {
+			cout<<"Overflow at internal node: number of keys exceeds than value of maximum key required"<<endl;
+			//logFile<<"Overflow at internal node: number of keys exceeds than value of maximum key required"<<endl;
+			errorlogFile<<"Overflow at internal node: number of keys exceeds than value of maximum key required"<<endl;
+
+			return -1;
+		}
+		if (root->n < minchild-1) {
+			cout<<"Underflow at internal node: number of keys less than value minimum key required"<<endl;
+			//logFile<<"Underflow at internal node: number of keys less than value minimum key required"<<endl;
+			errorlogFile<<"Underflow at internal node: number of keys less than value minimum key required"<<endl;
+
+			return -1;
+		}
+		//traverse 
+		int k  = invarient_b_plus_tree_(root->d.pivotmap[0]);
+		if (k != -1) {
+			for (int i=1; i <= root->n; i++) {
+				int t = invarient_b_plus_tree_(root->d.pivotmap[i]);
+				if(t != k) {
+					cout<<" Tree is not balanced ...";
+
+					//logFile<<" Tree is not balanced ...";
+					errorlogFile<<" Tree is not balanced ...";
+					return -1;
+				}
+			}
+			return 1+k;
+		} 
+
+		return -1;
+
+	}
+}
+
+/**
+* check_invarient performs prerequisites for invarient_b_plus_tree_()
+*
+* return 0 if no violance  and 1, if some violence of rules in given B+tree
+* @param root is node pointer pointing to root of B-plus tree
+*/
+bool check_invarient(node* root)
+{
+	if(root == NULL) {
+		cout<<"INVARIENT : Tree is empty";
+		//logFile<<"INVARIENT:Tree is empty";
+
+
+	} else {
+		//check invarient for root npde
+		if (!check_key_order(root)) {
+			return 0;
+		}
+		if (root->n > MAX_SIZE-1) {
+			cout<<"Overflow at root: number of keys exceeds than value of maximum key required"<<endl;
+			//logFile<<"Overflow at root: number of keys exceeds than value of maximum key required"<<endl;
+			errorlogFile<<"Overflow at root: number of keys exceeds than value of maximum key required"<<endl;
+			return 0;
+		}
+		if (root->n < 1) {
+			cout<<"Underflow at root: number of keys less than value minimum key required"<<endl;
+			//logFile<<"Underflow at root: number of keys less than value minimum key required"<<endl;
+			errorlogFile<<"Underflow at root: number of keys less than value minimum key required"<<endl;
+
+			return 0;
+		}
+		//check invarient for root internal children 
+		if (!root->datanode) {
+			int k  = invarient_b_plus_tree_(root->d.pivotmap[0]);
+			if(k != -1) {
+
+				for (int i=1; i<=root->n ;i++) {
+					int t = invarient_b_plus_tree_(root->d.pivotmap[i]);
+
+					if(t != k) {
+						cout<<" Tree is not balanced ...";
+						//logFile<<" Tree is not balanced ...";
+
+						errorlogFile<<" Tree is not balanced ...";
+						return  0;
+					}
+				}
+
+
+
+			} 
+
+		}
+	}
+	//cout<<"Invarient check finish withiout violation"<<endl;
+	//logFile<<"Invarient check finish withiout violation"<<endl;
+
+	return 1;
+}
